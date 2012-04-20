@@ -1,0 +1,110 @@
+<?php
+/**
+ * @file
+ * 
+ * Implements the "UCSF Library Mobile" module.
+ * Node, form and theme customizations.
+ * 
+ * @copyright Copyright (c) 2012 UC Regents 
+ */
+
+// Constants
+/** 
+ * @var UCSF_LIBRARY_MOBILE_MWF_APP_DIR path to the "Mobile Web Framework (MWF)" application directory within Drupal.
+ */
+if (!defined(UCSF_LIBRARY_MOBILE_MWF_APP_DIR)) {
+  define('UCSF_LIBRARY_MOBILE_MWF_APP_DIR', libraries_get_path('mwf'));
+}
+
+/**
+ * Implements hook_perm().
+ */
+function ucsf_library_mobile_perm() {
+  return array('administer UCSF library mobile site settings');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function ucsf_library_mobile_menu() {
+  $items = array();
+  $items['admin/settings/ucsf_library_mobile'] = array(
+    'title' => 'Settings',
+    'description' => 'Change site settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ucsf_library_mobile_admin_settings'),
+    'access arguments' => array('administer UCSF library mobile site settings'),
+    'file' => 'admin.inc'
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_nodeapi().
+ */
+function ucsf_library_mobile_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'view':
+      if (!$a3) {
+      	// load the page menu and stick it into the node
+      	$menu_name = variable_get('ucsf_library_mobile_menu', 'primary-links');
+       	$page_menu = _ucsf_library_mobile_get_page_menu($menu_name);
+        $node->mobile_page_menu = theme('ucsf_library_mobile_page_menu', $page_menu);
+      }
+  }
+}
+
+/**
+ * Creates and returns an associative array representing a page menu
+ * for the active menu item in a given menu.
+ * If the active menu item has no sub-menu then NULL is returned.
+ * @param $menu_name the menu name
+ * @return array|null
+ *   Returns an associative array containing two elements:
+ *     'title' ... the title of the page menu
+ *     'menu_items' ... an nested array of menu items
+ *  , or NULL if the currently active menu item has no sub-menu.
+ * @see menu_navigation_links()
+ */
+function _ucsf_library_mobile_get_page_menu($menu_name) {
+  $rhett = null;
+  $tree = menu_tree_page_data($menu_name);
+  $parent = false;
+  // Go down the active trail until the right level is reached.
+  while (!empty($tree)) {
+    // Loop through the current level's items until we find one that is in trail.
+    while (null !== ($item = array_shift($tree))) {
+      if ($item['link']['in_active_trail']) {
+        $parent = $item;
+        // If the item is in the active trail, we continue in the subtree.
+        $tree = empty($item['below']) ? array() : $item['below'];
+        break;
+      }
+    }
+  }
+
+  if ($parent && $parent['below']) {
+    $title = $parent['link']['title'];
+    $rhett = array('title' => $title, 'menu_items' => $parent['below']);
+    
+  }
+  return $rhett;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ucsf_library_mobile_theme($existing, $type, $theme, $path) {
+  
+  // require theme functions
+  $path = drupal_get_path('module', 'ucsf_library_mobile') . '/theme';
+  require_once "./{$path}/theme.inc";
+  
+  return array(
+    'ucsf_library_mobile_page_menu' => array(
+      'arguments' => array('menu' => array()),
+      'file' => 'theme.inc',
+      'path' => $path,
+    )
+  );
+}

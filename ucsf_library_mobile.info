@@ -1,0 +1,7 @@
+name = "UCSF Library Mobile"
+description = "Code customizations for the UCSF Library mobile site."
+core = 6.x
+version = "6.x-1.0-dev"
+php = 5.3.0
+dependencies[] = "libraries"
+package = "UCSF Library"
